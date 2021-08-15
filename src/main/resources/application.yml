@@ -1,0 +1,23 @@
+server:
+  port: 8085
+
+spring:
+  data:
+    mongodb:
+      uri: mongodb://localhost:27017/basketdb
+
+rabbitmq:
+  queue: basket_checked_out
+  exchange: basket_exchange
+  routingKey: basket_routingKey
+  customer:
+    queue: customer_created
+  product:
+    queue:
+      price: product_price_change
+      stock: product_stock_dropped
+
+constants:
+  noreply-email: "noreply@trendyol.com"
+
+
