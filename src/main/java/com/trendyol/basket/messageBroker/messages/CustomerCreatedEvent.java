@@ -5,14 +5,16 @@ import lombok.Builder;
 import lombok.Data;
 import lombok.NoArgsConstructor;
 
+import java.math.BigDecimal;
+
 @Data
 @Builder
 @AllArgsConstructor
 @NoArgsConstructor
-public class ProductStockChangeMessage {
+public class CustomerCreatedEvent {
 
-    private String productId;
+    private String userId;
 
-    private int quantity;
+    private String userEmail;
 
 }

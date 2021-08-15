@@ -2,9 +2,9 @@ package com.trendyol.basket.service;
 
 import com.trendyol.basket.exception.BasketNotFoundException;
 import com.trendyol.basket.messageBroker.RabbitMQProducer;
-import com.trendyol.basket.messageBroker.messages.CustomerCreatedMessage;
-import com.trendyol.basket.messageBroker.messages.ProductPriceChangeMessage;
-import com.trendyol.basket.messageBroker.messages.ProductStockChangeMessage;
+import com.trendyol.basket.messageBroker.messages.CustomerCreatedEvent;
+import com.trendyol.basket.messageBroker.messages.ProductPriceChangeEvent;
+import com.trendyol.basket.messageBroker.messages.ProductStockChangeEvent;
 import com.trendyol.basket.model.EmailMessage;
 import com.trendyol.basket.model.entity.Basket;
 import com.trendyol.basket.model.entity.BasketProduct;
@@ -38,13 +38,13 @@ public class BasketService implements IBasketService {
     /**
      * When a user sign up to the system her/his basket is created with her/his user id.
      *
-     * @param customerCreatedMessage used to create static one basket as long as user exists
+     * @param customerCreatedEvent used to create static one basket as long as user exists
      * @return basket
      */
-    public Basket createBasket(CustomerCreatedMessage customerCreatedMessage) {
+    public Basket createBasket(CustomerCreatedEvent customerCreatedEvent) {
         return Basket.builder()
-                .userId(customerCreatedMessage.getUserId())
-                .userEmail(customerCreatedMessage.getUserEmail())
+                .userId(customerCreatedEvent.getUserId())
+                .userEmail(customerCreatedEvent.getUserEmail())
                 .build();
     }
 
@@ -74,12 +74,12 @@ public class BasketService implements IBasketService {
         producer.send(basket);
     }
 
-    public void handleStockChange(ProductStockChangeMessage productStockChangeMessage) {
+    public void handleStockChange(ProductStockChangeEvent productStockChangeEvent) {
         String emailBodyText = "";
 
-        if (productStockChangeMessage.getQuantity() < STOCK_EMAIL_LOWER_LIMIT) {
-            emailBodyText = String.format(STOCK_EMAIL_BODY_TEXT, productStockChangeMessage.getProductId(), productStockChangeMessage.getQuantity());
-        } else if (productStockChangeMessage.getQuantity() == 0) {
+        if (productStockChangeEvent.getQuantity() < STOCK_EMAIL_LOWER_LIMIT) {
+            emailBodyText = String.format(STOCK_EMAIL_BODY_TEXT, productStockChangeEvent.getProductId(), productStockChangeEvent.getQuantity());
+        } else if (productStockChangeEvent.getQuantity() == 0) {
             emailBodyText = OUT_OF_STOCK_EMAIL_BODY_TEXT;
         }
 
@@ -89,21 +89,21 @@ public class BasketService implements IBasketService {
         if (!emailBodyText.isEmpty()) {
             String finalEmailBodyText = emailBodyText;
             basketRepository.findAll().forEach(basket -> {
-                if (basket.getProducts().containsKey(productStockChangeMessage.getProductId())) {
+                if (basket.getProducts().containsKey(productStockChangeEvent.getProductId())) {
                     emailService.sendEmail(EmailMessage.builder().emailBodyText(finalEmailBodyText).build(), basket.getUserEmail());
                 }
             });
         }
     }
 
-    public void handlePriceChange(ProductPriceChangeMessage productPriceChangeMessage) {
+    public void handlePriceChange(ProductPriceChangeEvent productPriceChangeEvent) {
         basketRepository.findAll().forEach(basket ->
-                basket.getProducts().computeIfPresent(productPriceChangeMessage.getProductId(), (id, product) -> {
-                    if (product.getProductPrice().compareTo(productPriceChangeMessage.getPrice()) < 0) {
-                        product.setProductPrice(productPriceChangeMessage.getPrice());
+                basket.getProducts().computeIfPresent(productPriceChangeEvent.getProductId(), (id, product) -> {
+                    if (product.getProductPrice().compareTo(productPriceChangeEvent.getPrice()) < 0) {
+                        product.setProductPrice(productPriceChangeEvent.getPrice());
                         // TODO: instead of calculate all price all over again, just subtract the difference
                         basket.updateBasketProduct(product);
-                        String emailText = String.format(PRODUCT_PRICE_DROPPED_EMAIL_BODY_TEXT, product.getProductId(), product.getProductPrice(), productPriceChangeMessage.getPrice());
+                        String emailText = String.format(PRODUCT_PRICE_DROPPED_EMAIL_BODY_TEXT, product.getProductId(), product.getProductPrice(), productPriceChangeEvent.getPrice());
                         emailService.sendEmail(EmailMessage.builder().emailBodyText(emailText).build(), basket.getUserEmail());
                     }
                     return product;

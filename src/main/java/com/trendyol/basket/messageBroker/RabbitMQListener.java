@@ -1,10 +1,9 @@
 package com.trendyol.basket.messageBroker;
 
-import com.trendyol.basket.messageBroker.messages.CustomerCreatedMessage;
-import com.trendyol.basket.messageBroker.messages.ProductPriceChangeMessage;
-import com.trendyol.basket.messageBroker.messages.ProductStockChangeMessage;
+import com.trendyol.basket.messageBroker.messages.CustomerCreatedEvent;
+import com.trendyol.basket.messageBroker.messages.ProductPriceChangeEvent;
+import com.trendyol.basket.messageBroker.messages.ProductStockChangeEvent;
 import com.trendyol.basket.service.BasketService;
-import com.trendyol.basket.service.EmailService;
 import lombok.RequiredArgsConstructor;
 import org.springframework.amqp.rabbit.annotation.RabbitListener;
 import org.springframework.stereotype.Component;
@@ -17,17 +16,17 @@ public class RabbitMQListener {
     private final BasketService basketService;
 
     @RabbitListener(queues = "${rabbitmq.customer.queue}")
-    public void createBasket(CustomerCreatedMessage customerCreatedMessage) {
-        basketService.createBasket(customerCreatedMessage);
+    public void createBasket(CustomerCreatedEvent customerCreatedEvent) {
+        basketService.createBasket(customerCreatedEvent);
     }
 
     @RabbitListener(queues = "${rabbitmq.product.queue.stock}")
-    public void handleStockChange(ProductStockChangeMessage productStockChangeMessage) {
-        basketService.handleStockChange(productStockChangeMessage);
+    public void handleStockChange(ProductStockChangeEvent productStockChangeEvent) {
+        basketService.handleStockChange(productStockChangeEvent);
     }
 
     @RabbitListener(queues = "${rabbitmq.product.queue.price}")
-    public void handlePriceChange(ProductPriceChangeMessage productPriceChangeMessage) {
-        basketService.handlePriceChange(productPriceChangeMessage);
+    public void handlePriceChange(ProductPriceChangeEvent productPriceChangeEvent) {
+        basketService.handlePriceChange(productPriceChangeEvent);
     }
 }
